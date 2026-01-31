@@ -64,11 +64,11 @@ set_location_assignment PIN_28 -to DIFFIO_L20N_CLK1N -tag platform
 set_location_assignment PIN_29 -to DIFFIO_L20P_CLK1P -tag platform
 set_location_assignment PIN_32 -to DIFFIO_L27N_PLL_CLKOUTN -tag platform
 set_location_assignment PIN_33 -to DIFFIO_L27P_PLL_CLKOUTP -tag platform
-# set_location_assignment PIN_38 -to DIFFIO_B1N -tag platform
-# set_location_assignment PIN_39 -to DIFFIO_B1P -tag platform
-# set_location_assignment PIN_41 -to DIFFIO_B3N -tag platform
-# set_location_assignment PIN_43 -to DIFFIO_B3P -tag platform
-set_location_assignment PIN_44 -to DIFFIO_B5N -tag platform
+#set_location_assignment PIN_38 -to DIFFIO_B1N -tag platform
+#set_location_assignment PIN_39 -to DIFFIO_B1P -tag platform
+#set_location_assignment PIN_41 -to DIFFIO_B3N -tag platform
+#set_location_assignment PIN_43 -to DIFFIO_B3P -tag platform
+#set_location_assignment PIN_44 -to DIFFIO_B5N -tag platform
 set_location_assignment PIN_45 -to DIFFIO_B5P -tag platform
 set_location_assignment PIN_46 -to DIFFIO_B7N -tag platform
 set_location_assignment PIN_47 -to DIFFIO_B7P -tag platform
@@ -83,9 +83,9 @@ set_location_assignment PIN_58 -to DIFFIO_B14P -tag platform
 set_location_assignment PIN_62 -to Arduino_IO8 -tag platform
 set_location_assignment PIN_64 -to Arduino_IO9 -tag platform
 set_location_assignment PIN_65 -to Arduino_IO10 -tag platform
-set_location_assignment PIN_66 -to Arduino_IO11 -tag platform
-set_location_assignment PIN_69 -to Arduino_IO12 -tag platform
-set_location_assignment PIN_70 -to Arduino_IO13 -tag platform
+#set_location_assignment PIN_66 -to Arduino_IO11 -tag platform
+#set_location_assignment PIN_69 -to Arduino_IO12 -tag platform
+#set_location_assignment PIN_70 -to Arduino_IO13 -tag platform
 set_location_assignment PIN_75 -to Arduino_IO1 -tag platform
 set_location_assignment PIN_74 -to Arduino_IO0 -tag platform
 set_location_assignment PIN_77 -to Arduino_IO3 -tag platform
@@ -153,7 +153,7 @@ set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE "12.5 %"
 set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
 #set_global_assignment -name QIP_FILE pll36864.qip
 set_location_assignment PIN_27 -to clk_50m
-set_location_assignment PIN_118 -to slpn
+set_location_assignment PIN_69 -to slpn
 set_global_assignment -name ENABLE_OCT_DONE ON
 set_global_assignment -name USE_CONFIGURATION_DEVICE ON
 set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
@@ -162,8 +162,7 @@ set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
-set_location_assignment PIN_119 -to rxd
-set_location_assignment PIN_106 -to txd
+set_location_assignment PIN_66 -to txd
 set_global_assignment -name SYSTEMVERILOG_FILE sinfo.sv
 set_global_assignment -name SYSTEMVERILOG_FILE Lin10M08EVK.sv
 set_global_assignment -name SYSTEMVERILOG_FILE lin_tx.sv
@@ -176,6 +175,8 @@ set_location_assignment PIN_38 -to test[0]
 set_location_assignment PIN_39 -to test[1]
 set_location_assignment PIN_41 -to test[2]
 set_location_assignment PIN_43 -to test[3]
+set_location_assignment PIN_44 -to test[4]
 set_location_assignment PIN_59 -to pump[0]
 set_location_assignment PIN_60 -to pump[1]
+set_location_assignment PIN_70 -to rxd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

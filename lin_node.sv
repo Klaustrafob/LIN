@@ -7,14 +7,17 @@ module lin_node #(
     input
 		clk_50m,
 		rxd,
+		tx_start,
+	input [63:0] data_in,
+	input [7:0] pid,
     output 
 		txd,
-		slpn,
 		data_valid,
-	input  [63:0] data_in,
-	output [63:0] data_out,
-	output [1:0] pump,
-	output [4:0] test
+		tx_busy,
+		rx_busy ,
+	output	reg slpn = '0,
+	output	[63:0] data_out,
+	output	[4:0] test
 );
 	localparam
 		CLK_FREQ 		=  1000000,      	// 1MHz
@@ -23,8 +26,7 @@ module lin_node #(
 	;
 
     // Module declarations
-logic reset = '0, clk1MHz = '0;
-assign pump = {clk1MHz, ~clk1MHz};
+logic clk1MHz = '0;
 
 `ifdef ALTERA_RESERVED_QIS
     pll1MHz clk_pll(
@@ -40,15 +42,16 @@ assign pump = {clk1MHz, ~clk1MHz};
 		else begin
 			clk_cnt <= CLK_DIV-1;
 			clk1MHz <= ~clk1MHz;
+			if (clk1MHz)
+				slpn <= '1;
 		end
 	end
-	assign slpn = '1;
 	
 `endif
 
-	always @(posedge clk1MHz)  reset <= ~slpn;
+	wire reset = ~slpn;
 	
-	wire rx_busy;
+//	wire rx_busy;
 	wire [4:0]rx_test;
     lin_rx #(
 		CLK_FREQ,
@@ -62,18 +65,15 @@ assign pump = {clk1MHz, ~clk1MHz};
 		.busy	   (rx_busy   ),
 		.test	   (rx_test   )
     );
-
- 	wire tx_start, tx_busy;
-	assign tx_start = '0;
 	
-	reg [7:0] pid;
+	
 	lin_tx #(
 		CLK_FREQ,
 		BAUD_RATE
 	)lin_tx0(
 		.clk    (clk1MHz ) , //system clock
 		.rst    (reset   ) , //reset
-		.master	(1'b0    ) ,
+		.master	(1'b1    ) ,
 		.start  (tx_start) , //start
 		.pid    (pid     ) , //id or address
 		.data   (data_in ) , //
@@ -81,7 +81,12 @@ assign pump = {clk1MHz, ~clk1MHz};
 		.busy	(tx_busy )	   
     );
 
-
-	assign test = rx_test;
+	assign test = rx_test;			//43
+	                                //41
+	                                //39
+	                                //38
+	
+	
+	
 
 endmodule

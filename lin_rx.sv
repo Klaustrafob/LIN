@@ -14,7 +14,7 @@ module lin_rx #(
 );
 
     // State encoding
-    typedef enum logic [2:0] {IDLE, SYNC, STOP, IDENTIFIER, DATA, CHECKSUM} lin_state_type;
+    typedef enum logic [2:0] {IDLE, BREAK, SYNC, STOP, IDENTIFIER, DATA, CHECKSUM} lin_state_type;
     lin_state_type state = IDLE, next_state = IDLE;
 
     // Internal signals
@@ -26,11 +26,6 @@ module lin_rx #(
  	reg [7:0] crc_out = '0;
 	reg [8:0] crc = '0;
 
-/*    crcd64_o8 CRCD64_O8(
-		.crc_in  (8'hFF ),
-		.data_in (64'hffffffffffffffff),
-		.crc_out (crc_out)
-    ); */
 
     // Constant
     localparam int
@@ -70,16 +65,23 @@ module lin_rx #(
         end
 		
 		case (state)
+		
 			IDLE: begin
-				//next_state <= IDLE;
+				bit_counter <= '0;
+				next_state <= IDLE;
+				tick_cnt <= tBREAK - 1;
+				if (!rx)
+					state <= BREAK;
+			end
+			
+			BREAK: begin
 					if (tick_cnt) begin
 						if (rx)
-							tick_cnt <= tBREAK - 1;
+							state <= IDLE;
 						else
 							tick_cnt <= tick_cnt - 1'b1;
 					end else if (rx)
 						state <= SYNC;
-					
 			end
 				
 			
@@ -100,7 +102,6 @@ module lin_rx #(
 							tick_cnt <= true_bit_time<<1; //set 2 bit max STOP
 						end else begin
 							tick_cnt <= tBREAK - 1;
-						//	next_state <= IDLE;
 							state <= IDLE;
 						end
 					end
@@ -133,13 +134,12 @@ module lin_rx #(
 						byte_counter <= 0;					
 						if (shift_reg[7:6] == {~(shift_reg[1] ^ shift_reg[3] ^ shift_reg[4] ^ shift_reg[5]), shift_reg[0] ^ shift_reg[1] ^ shift_reg[2] ^ shift_reg[4]}) begin
 							next_state <= DATA;
-							crc <= '0;
+							crc <= shift_reg;
 							data_valid <= 1'b0;
 							tick_cnt <= bit_time<<1;
 							state <= STOP;
 						end else begin
 							tick_cnt <= tBREAK - 1;
-						//	next_state <= IDLE;
 							state <= IDLE;
 						end
 					end
@@ -184,7 +184,7 @@ module lin_rx #(
 				end
 			end
 
-			CHECKSUM: begin			
+			CHECKSUM: begin		
 				if (sync) begin
 					sync <= '0;
 					if (bit_counter < 9) begin
@@ -202,7 +202,7 @@ module lin_rx #(
 							data_valid <= 1'b1;
 						end
 					end
-				end begin
+				end else begin
 					if (tick_cnt)
 						tick_cnt <= tick_cnt - 1'b1;
 					else begin
@@ -213,9 +213,10 @@ module lin_rx #(
 			end
 			
 			default: begin
+				bit_counter <= '0;
 				tick_cnt <= tBREAK - 1;
 				data_valid <= 1'b0;
-//				next_state <= IDLE;
+				next_state <= IDLE;
 				state <= IDLE;
 			end
 				
@@ -224,22 +225,22 @@ module lin_rx #(
 
 	wire s_info;
 	sinfo #( 
-		.GROUPS	(1),
+		.GROUPS	(8),
 		.WORDS 	(2),
-		.WIDTH 	(8)
+		.WIDTH 	(4)
 	)sinfo0(
 		.clk (clk),
-		.d   ({shift_reg, crc_out}),
+		.d   ({state,1'b0,bit_counter, tick_cnt, 6'b000000, data_out[39:0]}),
 		.q   (s_info)
 	);
 	
 	assign busy = (state != IDLE);
 	
-	assign test[4] = busy;
-	assign test[3] = (shift_reg == crc_out);
-	assign test[2] = data_valid;
-	assign test[1] = rx & (state == CHECKSUM);
-	assign test[0] = s_info;
+	assign test[4] = state == SYNC;						//44
+	assign test[3] = state == BREAK;					//43
+	assign test[2] = state == IDLE;						//41
+	assign test[1] = rx;								//39
+	assign test[0] = s_info;							//38
 	
 	
 endmodule

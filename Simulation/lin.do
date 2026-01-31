@@ -83,6 +83,6 @@ view -undock wave
 wm state .main_pane.wave zoomed
 do wave_${PRJ}.do
 
-run 8 ms
+run 16 ms
 WaveRestoreZoom {600us} {8000us}
 puts "*------------------SIMULATION DONE!------------------*"

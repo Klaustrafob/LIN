@@ -85,7 +85,7 @@ module lin_tx #(
 						state <= SYNC_BREAK;
 					end else begin
 						sdo <= 1'b1;
-						crc <= data[7:0];
+						crc <= '0;
 						data_reg <= data;
 						state <= DATA;
 					end
@@ -114,6 +114,7 @@ module lin_tx #(
 				end	else begin
                     sdo <= 1;//stop bit
                     bit_count <= 0;
+					crc <= pid_adrs_reg;
                     state <= PID;
                 end
             end
@@ -131,7 +132,7 @@ module lin_tx #(
 					bit_count <= 0;
 					byte_count <= '0;
 					data_reg <= data;
-					crc <= data[7:0];
+					crc <= crc[7:0]  + crc[8] + data_reg[7:0];
                     state <= DATA;
                 end
             end

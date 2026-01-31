@@ -86,9 +86,6 @@ set_output_delay -clock clk1MHz -min $min_delay [get_ports {txd}]
 set_output_delay -clock clk1MHz -max $max_delay [get_ports {txd}]
 set_output_delay -clock clk1MHz -min $min_delay [get_ports {slpn}]
 set_output_delay -clock clk1MHz -max $max_delay [get_ports {slpn}]
-set_output_delay -clock clk1MHz -min $min_delay [get_ports {pump[*]}]
-set_output_delay -clock clk1MHz -max $max_delay [get_ports {pump[*]}]
-
 #**************************************************************
 # Set Clock Groups
 #**************************************************************

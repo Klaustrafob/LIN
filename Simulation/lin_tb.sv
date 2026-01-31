@@ -27,53 +27,40 @@ module lin_tb();
 	logic start			 			;
     logic [5:0] pid      			;
     logic [63:0] data    			;
-    logic txd, rxd, slpn,data_valid ;
-    logic [33:0] frame_header_out  	;
-	logic [89:0] response_out      	;
-    logic comm_tx_done             	;
-    logic resp_tx_done = 0         	;
-	logic resp_busy				   	;
-	logic lin_busy 				   	;
-	logic inter_tx_delay    		;//inter transmission delay
+    logic txd, rxd, slpn, data_valid;
+    logic tx_busy, rx_busy  		;
+	logic [63:0] data_in = '0, data_out;
 		
 	parameter int
 		f50m  = 50000000			, // 50MHz
 		t50m  = 1000000000/f50m		, // 20ns
 		bRATE = 19200				, // 19200 Hz
+		tBAUD = 1000000000/bRATE	, // 52us 19200Hz
 		fSYS  = 1000000				, // 1MHz
-		tSYS  = 1000000000/fSYS 	  //52us 19200Hz		   	
+		tSYS  = 1000000000/fSYS 	, // 1000ns
+		tBREAK = 13*tBAUD			  // 676us
 	;
 
-	logic [63:0] data_in = '0, data_out;
+	assign rxd = txd;
 	
 	lin_node #(
 		f50m,
 		bRATE
 		) lin_node0 (
-		.clk_50m	(clk_50m),
-		.rxd		(txd),
-		.txd		(rxd),
-		.slpn		(slpn),
-		.data_valid	(data_valid),
-		.data_in	(data_in),
-		.data_out	(data_out)	 
+		.clk_50m	(clk_50m	),
+		.rxd		(rxd		),
+		.tx_start	(start		),
+		.data_in	(data_in	),
+		.pid		(pid		),
+		.txd		(txd		),
+		.data_valid	(data_valid	),
+		.tx_busy	(tx_busy	),
+		.rx_busy 	(rx_busy	),		
+		.slpn		(slpn		),
+		.data_out	(data_out	),
+		.test		(			)	
 	);
-	
-	
-	lin_tx #(
-		fSYS,
-		bRATE
-	)lin_tx1(
-		.clk    (sys_clk ) , //system clock
-		.rst    (~rstn   ) , //reset
-		.master	(1'b1    ) ,
-		.start  (start   ) , //start
-		.pid    (pid     ) , //id or address
-		.data   (data    ) , //
-		.sdo	(txd     ) , //serial data out
-		.busy	()	   
-    );
-
+		
     initial begin
 		clk_50m = 0;
         sys_clk = 0;
@@ -81,13 +68,16 @@ module lin_tb();
 		start   = 0;
         pid     = 0;
         data    = 0;
-        #tSYS;
-        rstn    = 1;
-		start   = 1;
-        pid     = 6'h2e;
-        data    = 64'h0807060504030201;
-		#tSYS
-		start   = 0;
+		#tBREAK    ;
+		forever if(slpn) begin
+			start   = 1;
+			pid     = 6'h2e;
+			data    = 64'h0807060504030201;
+			#tSYS;
+			start   = 0;
+			while (tx_busy)   #tSYS;
+			#tBREAK;
+		end
     end
 
 	always #(t50m/2)  clk_50m = ~clk_50m;
