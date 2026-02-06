@@ -67,14 +67,14 @@ module lin_tb();
         rstn    = 0;
 		start   = 0;
         pid     = 0;
-        data    = 0;
+        data_in    = 0;
 		#tBREAK    ;
 		forever if(slpn) begin
-			start   = 1;
-			pid     = 6'h2e;
-			data    = 64'h0807060504030201;
+			start   	= 1;
+			pid     	= 6'h2e;
+			data_in    	= 64'h0807060504030201;
 			#tSYS;
-			start   = 0;
+			start   	= 0;
 			while (tx_busy)   #tSYS;
 			#tBREAK;
 		end
