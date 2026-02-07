@@ -32,22 +32,23 @@ module lin_tb();
 	logic [63:0] data_in = '0, data_out;
 		
 	parameter int
-		f50m  = 50000000			, // 50MHz
-		t50m  = 1000000000/f50m		, // 20ns
-		bRATE = 19200				, // 19200 Hz
-		tBAUD = 1000000000/bRATE	, // 52us 19200Hz
-		fSYS  = 1000000				, // 1MHz
-		tSYS  = 1000000000/fSYS 	, // 1000ns
-		tBREAK = 13*tBAUD			  // 676us
+		f50m  	= 50000000				, // 50MHz
+		t50m  	= 1000000000/f50m		, // 20ns
+		bRATE 	= 19200					, // 19200 Hz
+		tBAUD 	= 1000000000/bRATE		, // 52us 19200Hz
+		fSYS  	= 1000000				, // 1MHz
+		tSYS  	= 1000000000/fSYS 		, // 1000ns
+		tBREAK 	= 13*tBAUD			  	  // 676us
 	;
 
 	assign rxd = txd;
 	
 	lin_node #(
-		f50m,
+		fSYS,
 		bRATE
 		) lin_node0 (
-		.clk_50m	(clk_50m	),
+		.clock		(sys_clk	),
+		.reset		(~rstn		),
 		.rxd		(rxd		),
 		.tx_start	(start		),
 		.data_in	(data_in	),
@@ -56,20 +57,20 @@ module lin_tb();
 		.data_valid	(data_valid	),
 		.tx_busy	(tx_busy	),
 		.rx_busy 	(rx_busy	),		
-		.slpn		(slpn		),
 		.data_out	(data_out	),
 		.test		(			)	
 	);
 		
     initial begin
-		clk_50m = 0;
-        sys_clk = 0;
-        rstn    = 0;
-		start   = 0;
-        pid     = 0;
-        data_in    = 0;
-		#tBREAK    ;
-		forever if(slpn) begin
+		clk_50m 	= 0;
+        sys_clk 	= 0;
+        rstn    	= 0;
+		start   	= 0;
+        pid     	= 0;
+        data_in    	= 0;
+		#tBREAK    	   ;
+		rstn		= 1;
+		forever if(!tx_busy && !rx_busy) begin
 			start   	= 1;
 			pid     	= 6'h2e;
 			data_in    	= 64'h0807060504030201;

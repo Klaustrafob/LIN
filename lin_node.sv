@@ -1,11 +1,12 @@
 
 module lin_node #(
  parameter
-	CRYSTAL_FREQ 	= 50000000, 	//50MHz
+	CLK_FREQ	 	= 1000000, 		//1MHz
 	BAUD_RATE		= 19200  		// 19200 UART rate
 ) (
     input
-		clk_50m,
+		clock,
+		reset,
 		rxd,
 		tx_start,
 	input [63:0] data_in,
@@ -15,18 +16,21 @@ module lin_node #(
 		data_valid,
 		tx_busy,
 		rx_busy ,
-	output	reg slpn = '0,
+//	output	reg slpn = '0,
 	output	[63:0] data_out,
+	output  err,
 	output	[4:0] test
 );
-	localparam
+
+
+/*	localparam
 		CLK_FREQ 		=  1000000,      	// 1MHz
 		CLK_DIV			= CRYSTAL_FREQ/CLK_FREQ/2,
 		wCLK			= $clog2(CLK_DIV)
 	;
 
     // Module declarations
-logic clk1MHz = '0;
+ logic clk1MHz = '0;
 
 `ifdef ALTERA_RESERVED_QIS
     pll1MHz clk_pll(
@@ -47,23 +51,25 @@ logic clk1MHz = '0;
 		end
 	end
 	
-`endif
+`endif 
 
-	wire reset = ~slpn;
+	wire reset = ~slpn;*/
 	
+	wire rx_err;
 //	wire rx_busy;
 	wire [4:0]rx_test;
     lin_rx #(
 		CLK_FREQ,
 		BAUD_RATE
 	) lin_rx0 (
-        .clk       (clk1MHz   ),
-        .rst       (reset     ),
-        .rx        (rxd       ),
-        .data_out  (data_out  ),
-        .data_valid(data_valid),
-		.busy	   (rx_busy   ),
-		.test	   (rx_test   )
+        .clk       	(clock   	),
+        .rst       	(reset     	),
+        .rx        	(rxd       	),
+        .data_out  	(data_out  	),
+        .data_valid	(data_valid	),
+		.busy	   	(rx_busy   	),
+		.err	   	(rx_err		),
+		.test	   	(rx_test   	)
     );
 	
 	
@@ -71,7 +77,7 @@ logic clk1MHz = '0;
 		CLK_FREQ,
 		BAUD_RATE
 	)lin_tx0(
-		.clk    (clk1MHz ) , //system clock
+		.clk    (clock 	 ) , //system clock
 		.rst    (reset   ) , //reset
 		.master	(1'b1    ) ,
 		.start  (tx_start) , //start
@@ -81,6 +87,7 @@ logic clk1MHz = '0;
 		.busy	(tx_busy )	   
     );
 
+	assign err = rx_err;
 	assign test = rx_test;			//43
 	                                //41
 	                                //39

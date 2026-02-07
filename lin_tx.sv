@@ -125,7 +125,7 @@ module lin_tx #(
 					if (bit_count) begin
 						pid_adrs_reg <= {1'b0, pid_adrs_reg[7:1]};
 						sdo <= pid_adrs_reg[0];
-					end else
+					end  else													// STOP end
 						sdo <= 0;//start bit
 				end else begin
 					sdo <= 1;//stop bit
@@ -139,12 +139,12 @@ module lin_tx #(
 			
 			
 			DATA: if (sync) begin
-				if (bit_count < 9) begin
+				if (bit_count < 10) begin
 					bit_count <= bit_count + 1;	
-					if (bit_count) begin
+					if (bit_count > 1) begin
 						data_reg <= {1'b0, data_reg[63:1]};
 						sdo <= data_reg[0];
-					end else
+					end else if (bit_count)										// 2STOP end
 						sdo <= 0;//start bit
 				end else begin
 					sdo <= 1;	 // stop bit
@@ -162,12 +162,12 @@ module lin_tx #(
             end
 			
 			CHECKSUM: if (sync) begin
-                if (bit_count < 9) begin
+                if (bit_count < 10) begin
 					bit_count <= bit_count + 1;
-					if (bit_count)begin
+					if (bit_count > 1)begin
 						crc_out <= {1'b0, crc_out[7:1]};
 						sdo <= crc_out[0];
-					end else  
+					end else if(bit_count)
 						sdo <= 0;//start bit
 				end else begin
 					sdo <= 1;//stop bit
