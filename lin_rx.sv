@@ -50,11 +50,12 @@ module lin_rx #(
 	wire [7:0] classic_crc = tclassic_crc[7:0] + tclassic_crc[8];
 	
 	reg [wTICK-1:0] tick_cnt = '0;
-	reg drx = '0, sync = '0;
+	reg [1:0]drx = '0; 
+	reg sync = '0;
 	
     // Main logic FSM
     always @(posedge clk) begin
-		drx <= rx;
+		drx <= {drx[0],rx};
         if (rst) begin
             state <= IDLE;
 			tick_cnt <= nBREAK - 1;
@@ -75,7 +76,7 @@ module lin_rx #(
 				req <= '0;
 				sync <= '0;
 				bit_counter <= '0;
-				if (!rx) begin
+				if (!drx[0]) begin
 					err <= '0;
 					if (master) begin						// master mode
 						tick_cnt <= nBAUD/2 - 4;
@@ -89,19 +90,19 @@ module lin_rx #(
 			
 			BREAK: begin
 					if (tick_cnt) begin
-						if (rx) begin						// BREAK too short
+						if (drx[0]) begin						// BREAK too short
 							err <= '1;
 							state <= IDLE;
 						end else
 							tick_cnt <= tick_cnt - 1'b1;
-					end else if (rx) begin					// BREAK is Ok
+					end else if (drx[0]) begin					// BREAK is Ok
 						tick_cnt <= MIN_nBAUD;
 						state <= BREAK_DELIMITER;
 					end
 			end
 			
 			BREAK_DELIMITER: begin
-				if(rx) begin
+				if(drx[0]) begin
 					if (tick_cnt)							// STOP continued
 						tick_cnt <= tick_cnt - 1'b1;
 				end else begin
@@ -117,10 +118,10 @@ module lin_rx #(
 			end
 				
 			SYNC: begin
-				sync <= rx ^ drx;
+				sync <= ^drx;
 				if (sync) begin		
 					if (bit_counter < 8) begin
-						shift_reg <= {rx, shift_reg[7:1]};
+						shift_reg <= {drx[0], shift_reg[7:1]};
 						bit_counter <= bit_counter + 1;
 							tick_cnt <= nBAUD + 4;
 					end else begin
@@ -145,7 +146,7 @@ module lin_rx #(
 			
 			
 			SYNC_STOP:begin
-				if(rx) begin
+				if(drx[0]) begin
 					if (tick_cnt)								// STOP continued
 						tick_cnt <= tick_cnt - 1'b1;
 				end else begin
@@ -165,7 +166,7 @@ module lin_rx #(
 				if (sync) begin
 					sync <= '0;
 					if (bit_counter < 9) begin
-						shift_reg <= {rx, shift_reg[7:1]};
+						shift_reg <= {drx[0], shift_reg[7:1]};
 						bit_counter <= bit_counter + 1;
 						tick_cnt <= tick_cnt - 1'b1;
 					end  else begin
@@ -196,7 +197,7 @@ module lin_rx #(
 			
 			
 			PID_STOP:begin
-				if(rx) begin
+				if(drx[0]) begin
 					if (tick_cnt)								// STOP continued
 						tick_cnt <= tick_cnt - 1'b1;
 					else begin									// “STOP” is too long; it's a request frame.
@@ -217,7 +218,7 @@ module lin_rx #(
 			
 
 			BYTE_STOP:begin
-				if(rx) begin
+				if(drx[0]) begin
 					if (tick_cnt)								// STOP continued
 						tick_cnt <= tick_cnt - 1'b1;
 					else begin
@@ -225,7 +226,7 @@ module lin_rx #(
 						state <= IDLE;							// STOP too long	
 					end
 				end else begin
-					if (tick_cnt > nBAUD - 4) begin			// STOP too short
+					if (tick_cnt > nBAUD - 4) begin				// STOP too short
 						err <= '1;
 						state <= IDLE;
 					end else begin								// STOP Ok
@@ -242,7 +243,7 @@ module lin_rx #(
 					sync <= '0;
 					if (bit_counter < 9) begin
 						bit_counter <= bit_counter + 1;
-						shift_reg <= {rx, shift_reg[7:1]};
+						shift_reg <= {drx[0], shift_reg[7:1]};
 						tick_cnt <= tick_cnt - 1'b1;
 					end else begin
 						bit_counter <= bit_counter + 1;
@@ -270,7 +271,7 @@ module lin_rx #(
 			
 			
 			DATA_STOP:begin
-				if(rx) begin
+				if(drx[0]) begin
 					if (tick_cnt)								// STOP continued
 						tick_cnt <= tick_cnt - 1'b1;
 					else begin
@@ -294,7 +295,7 @@ module lin_rx #(
 				if (sync) begin
 					sync <= '0;
 					if (bit_counter < 9) begin
-						shift_reg <= {rx, shift_reg[7:1]};
+						shift_reg <= {drx[0], shift_reg[7:1]};
 						bit_counter <= bit_counter + 1;
 						tick_cnt <= tick_cnt - 1'b1;
 					end else begin
@@ -322,7 +323,7 @@ module lin_rx #(
 			
 			CRC_STOP:begin
 				if (tick_cnt) begin								// STOP continued
-					if(rx)
+					if(drx[0])
 						tick_cnt <= tick_cnt - 1'b1;
 					else begin									// STOP too short		
 						err <= '1;
