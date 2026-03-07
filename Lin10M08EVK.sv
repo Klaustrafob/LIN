@@ -43,24 +43,28 @@ module Lin10M08EVK (
 
 	wire data_valid,tx_start,tx_busy,rx_busy;
 	wire [63:0] data_in, data_out;
+	assign data_in = 64'h584C410110620816;
 	wire [4:0]lin_test;
 	wire [5:0] pid;
-	wire lin_err;
+	wire lin_start, lin_err;
 	
  	localparam CRYSTAL_FREQ	=  50000000;
 	localparam real	LED_FREQ = 0.2;			// 1Hz
+	wire classic;
 	
 	lin_node #(
 		.CLK_FREQ			(CLK_FREQ	),		// 1MHz
-		.BAUD_RATE	  		(19200   	)		// 19200 UART rate
+		.BAUD_RATE	  		(19200   	),		// 19200 UART rate
+		.PID				(6'h3D		)
 	) lin_node0 			(
 		.reset				(~slpn		),
 		.clock				(clk1MHz	),
 		.rxd				(rxd		),
-		.tx_start			(tx_start	),
+		.classic			(classic	),
 		.data_in			(data_in	),
-		.pid				(pid		),
 		.txd				(txd		),
+		.master				(1'b0		), 
+		.start				(lin_start  ),
 		.data_valid			(data_valid	),
 		.tx_busy			(tx_busy	),
 		.rx_busy			(rx_busy	),
@@ -74,18 +78,15 @@ module Lin10M08EVK (
 		wLED 			= $clog2(nLED) //20
 	;
 	
-	reg [wLED-1:0]led_cnt = '0;
+/* 	reg [wLED-1:0]led_cnt = '0;
 	always @( posedge clk_50m) begin
 		led_cnt <= led_cnt- 1'b1;
-	end
+	end */
 	
 	reg [4:0]err_cnt = '0;
-	always @( posedge clk_50m) begin
-		if(err_cnt[0] ^ lin_err)
-			err_cnt <= err_cnt + 1'b1;
-	end
+	always @( posedge clk1MHz) begin err_cnt <= err_cnt + (err_cnt[0] ^ lin_err); end
 	
-	assign led[4] = led_cnt[wLED-1];
+	assign led[4] = ~classic;//led_cnt[wLED-1];
 	assign led[3:0] = ~err_cnt[4:1];
 	//assign led[4:0] = ~({5{led_cnt[wLED-1]}} & {5{data_valid}} & data_out[4:0]);
 	//always @( posedge clk_50m) led <= data_out[4:0];
