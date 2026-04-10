@@ -47,7 +47,6 @@ vmap work work
 # -------------------------------------------
 vlog -incr -work work -sv 					\
 ../pll1MHz.v								\
-../crcd64_o8.v								\
 ../lin_rx.sv                     	        \
 ../lin_node.sv		                     	\
 ../sinfo.sv									\
@@ -83,6 +82,6 @@ view -undock wave
 wm state .main_pane.wave zoomed
 do wave_${PRJ}.do
 
-run 16 ms
+run 21200 us
 WaveRestoreZoom {600us} {8000us}
 puts "*------------------SIMULATION DONE!------------------*"

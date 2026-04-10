@@ -1,5 +1,3 @@
-`timescale 1ns / 1ps
-
 
 module lin_tx #(
 	parameter
@@ -50,13 +48,20 @@ module lin_tx #(
     state_type_e state = IDLE;
 	
 	//CRC instantiation
-	
 	reg  [7:0] crc_ff = '0;	
- 	wire [8:0] tcrc = crc_ff + data_reg[7:0];
-	wire [7:0] crc = tcrc[7:0] + tcrc[8];
+	function automatic [7:0] crc (input [7:0] a, b);
+		reg [8:0] tcrc;
+		begin
+			tcrc = a + b;
+			return tcrc[7:0] + tcrc[8];
+		end
+	endfunction
+ 	
+	
+	
 
     //FSM 
-    always_ff @ (posedge clk ) begin
+    always_ff @ (posedge clk  or posedge rst) begin
         if (rst) begin
             sdo <= 1;
 			byte_count <= '0;
@@ -64,7 +69,6 @@ module lin_tx #(
             pid_adrs_reg <= 0;
 			data_reg <= '0;
 			crc_ff <= '0;
-//			crc_out <= '0;
             state <= IDLE;
         end else begin
             case(state)
@@ -72,20 +76,22 @@ module lin_tx #(
             default: begin
 				byte_count <= '0;
                 bit_count <= 0;
-                pid_adrs_reg <= {~(pid[1] ^ pid[3] ^ pid[4] ^ pid[5]), pid[0] ^ pid[1] ^ pid[2] ^ pid[4], pid};
                 if (start) begin
-					data_reg <= data;
+					pid_adrs_reg <= {~(pid[1] ^ pid[3] ^ pid[4] ^ pid[5]), pid[0] ^ pid[1] ^ pid[2] ^ pid[4], pid};
+					data_reg <= data;					
 					if (master) begin
 						crc_ff <= '0;
 						sdo <= 1'b0;
 						state <= SYNC_BREAK;
 					end else begin
-						crc_ff <= data[7:0];        // first byte
+						crc_ff <= classic ? data[7:0] : crc(data[7:0],{~(pid[1] ^ pid[3] ^ pid[4] ^ pid[5]), pid[0] ^ pid[1] ^ pid[2] ^ pid[4], pid});
 						sdo <= 1'b1;
 						state <= DATA;
 					end
-                end else
+                end else begin
+//					crc_ff <= {~(pid[1] ^ pid[3] ^ pid[4] ^ pid[5]), pid[0] ^ pid[1] ^ pid[2] ^ pid[4], pid};
 					sdo <= 1'b1;
+				end
             end
 			
             SYNC_BREAK: if (sync) begin
@@ -95,7 +101,6 @@ module lin_tx #(
                 end else begin
                     sdo <= 1;//delimeter
                     bit_count <= 0;
-//					crc_ff <= '0;
                     state <= SYNC_FIELD;
                 end
             end
@@ -128,8 +133,7 @@ module lin_tx #(
 					sdo <= 1;//stop bit
 					bit_count <= 0;
 					byte_count <= '0;
-//					data_reg <= data;
-					crc_ff <= crc;
+					crc_ff <= crc(crc_ff,data_reg[7:0]);
                     state <= DATA;
                 end
             end
@@ -146,7 +150,7 @@ module lin_tx #(
 				end else begin
 					sdo <= 1;	 // stop bit
 					bit_count <= '0;
-					crc_ff <= crc;
+					crc_ff <= crc(crc_ff,data_reg[7:0]);
 					if (byte_count < 7) begin
 						byte_count <= byte_count + 1;
 					end else begin
@@ -161,7 +165,6 @@ module lin_tx #(
                 if (bit_count < 10) begin
 					bit_count <= bit_count + 1;
 					if (bit_count > 1)begin
-//						crc_out <= {1'b0, crc_out[7:1]};
 						sdo <= ~crc_ff[bit_count-2];
 					end else if(bit_count)
 						sdo <= 0;//start bit
@@ -175,7 +178,10 @@ module lin_tx #(
             endcase
         end
     end
-
-    assign busy = start || (state != IDLE);	//transmitter busy
+	
+	reg [7:0]busy_delay = '0;
+	always_ff @ (posedge clk) busy_delay <= {busy_delay[6:0],start | (state != IDLE)};
+		
+    assign busy = start | |busy_delay;	//transmitter busy
 
 endmodule

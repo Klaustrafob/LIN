@@ -31,8 +31,8 @@ module lin_tb();
 		.clock		(sys_clk	),
 		.reset		(~rstn		),
 		.rxd		(rxd		),
-		.classic	(classic	),
-//		.tx_start	(start		),
+		.classic	(1'b1		),
+		.rx_classic	(rx_classic ),
 		.data_in	(data_in	),
 //		.pid		(pid		),
 		.txd		(txd		),
@@ -52,8 +52,6 @@ module lin_tb();
         rstn    				= 0;
 		lin_master				= 1;
 		lin_start			   	= 0;
-//        pid     				= 0;
-//        data_in    				= 0;
 		#tBREAK    				   ;
 		rstn					= 1;
 		forever if(!rx_busy) begin
@@ -66,7 +64,7 @@ module lin_tb();
 			lin_master			= 0;
 			#tBREAK;
 			lin_start			= 1;
-			data_in    			= data_in + 1;						
+			data_in    			= data_in + 2;						
 			#tSYS;
 			lin_start			= 0;
 			while (tx_busy)		#tSYS;

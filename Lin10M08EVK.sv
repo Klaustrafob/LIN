@@ -19,14 +19,17 @@ module Lin10M08EVK (
 		wCLK			= $clog2(CLK_DIV)
 	;
 
-	logic clk1MHz = '0;
+	
 	`ifdef ALTERA_RESERVED_QIS
+		wire c0;
+		wire clk1MHz = slpn & c0;
 		pll1MHz clk_pll(
 			.inclk0(clk_50m),
-			.c0(clk1MHz),
+			.c0(c0),
 			.locked(slpn)
 		);
 	`else
+		reg clk1MHz = '0;
 		reg [wCLK-1:0] clk_cnt = '0;
 		always @(posedge clk_50m) begin
 			if (clk_cnt)
@@ -42,15 +45,17 @@ module Lin10M08EVK (
 	`endif
 
 	wire data_valid,tx_start,tx_busy,rx_busy;
-	wire [63:0] data_in, data_out;
-	assign data_in = 64'h584C410110620816;
+	wire [63:0] data_in[3], data_out;
+	assign data_in[0] = 64'h35314B10110621F16;
+	assign data_in[1] = 64'hf20322D3732352116;
+	assign data_in[2] = 64'hfffffffffffff2216;
 	wire [4:0]lin_test;
 	wire [5:0] pid;
 	wire lin_start, lin_err;
 	
  	localparam CRYSTAL_FREQ	=  50000000;
 	localparam real	LED_FREQ = 0.2;			// 1Hz
-	wire classic;
+	wire rx_classic;
 	
 	lin_node #(
 		.CLK_FREQ			(CLK_FREQ	),		// 1MHz
@@ -60,8 +65,9 @@ module Lin10M08EVK (
 		.reset				(~slpn		),
 		.clock				(clk1MHz	),
 		.rxd				(rxd		),
-		.classic			(classic	),
-		.data_in			(data_in	),
+		.classic			(1'b0		),
+		.rx_classic			(rx_classic ),
+		.data_in			(data_in[0]	),
 		.txd				(txd		),
 		.master				(1'b0		), 
 		.start				(lin_start  ),
@@ -83,11 +89,11 @@ module Lin10M08EVK (
 		led_cnt <= led_cnt- 1'b1;
 	end */
 	
-	reg [4:0]err_cnt = '0;
-	always @( posedge clk1MHz) begin err_cnt <= err_cnt + (err_cnt[0] ^ lin_err); end
+	reg [4:0]err_cnt = '1;
+	always @( posedge clk1MHz) err_cnt <= err_cnt - (err_cnt[0] ^ lin_err);
 	
-	assign led[4] = ~classic;//led_cnt[wLED-1];
-	assign led[3:0] = ~err_cnt[4:1];
+	assign led[4] = ~rx_classic;//led_cnt[wLED-1];
+	assign led[3:0] = err_cnt[4:1];
 	//assign led[4:0] = ~({5{led_cnt[wLED-1]}} & {5{data_valid}} & data_out[4:0]);
 	//always @( posedge clk_50m) led <= data_out[4:0];
 	//assign led[3:0] = lin_test[3:0];
